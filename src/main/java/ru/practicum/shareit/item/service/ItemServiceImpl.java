@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.InternalServerException;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -15,6 +16,7 @@ import ru.practicum.shareit.user.repository.UserRepository;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
@@ -30,12 +32,13 @@ public class ItemServiceImpl implements ItemService {
             item.setOwner(userRepository.getById(userId).orElseThrow(() -> new NotFoundException("В заголовке передан не существующий userId")));
         }
         Long id = itemRepository.save(item);
-        System.out.println("Create " + ItemMapper.toItemDto(itemRepository.getById(id).get()));
+        log.info("Создан предмет с id = " + id);
         return ItemMapper.toItemDto(itemRepository.getById(id).orElseThrow(() -> new NotFoundException("Предмет не найден")));
     }
 
     @Override
     public ItemDto getById(Long id) {
+        log.info("Поиск предмета с id = " + id);
         return ItemMapper.toItemDto(itemRepository.getById(id).orElseThrow(() -> new NotFoundException("Предмет не найден")));
     }
 
@@ -46,6 +49,7 @@ public class ItemServiceImpl implements ItemService {
         } else {
             userRepository.getById(userId).orElseThrow(() -> new NotFoundException("В заголовке передан не существующий userId"));
         }
+        log.info("Поиск предметов пользователя с userId = " + userId);
         return itemRepository.getAll().stream()
                 .filter(item -> item.getOwner().getId().equals(userId))
                 .map(ItemMapper::toItemDto)
@@ -54,6 +58,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> search(String text) {
+        log.info("Поиск предметов по слову = " + text);
         return itemRepository.search(text).stream()
                 .map(ItemMapper::toItemDto)
                 .toList();
@@ -65,11 +70,9 @@ public class ItemServiceImpl implements ItemService {
         if (!Objects.equals(item.getOwner().getId(), userId)) {
             throw new NotFoundException("Эта вещь не принадлежит пользователю");
         }
-        System.out.println("Item " + item);
-        System.out.println("updateItemRequest " + updateItemRequest);
         Item itemUp = ItemMapper.updateItemFields(item, updateItemRequest);
-        System.out.println("Update " + itemUp);
         itemRepository.update(itemId, itemUp);
+        log.info("Предмет с id = " + itemId + " обновлён");
         return ItemMapper.toItemDto(itemRepository.getById(itemId).orElseThrow(() -> new NotFoundException("Предмет после обновления не найден")));
     }
 }

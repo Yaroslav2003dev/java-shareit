@@ -32,7 +32,6 @@ public class ItemRepository {
     }
 
     public List<Item> search(String text) {
-        System.out.println("items " + items);
         if (text == null || text.isEmpty()) {
             return List.of();
         } else {

@@ -1,6 +1,7 @@
 package ru.practicum.shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.InternalServerException;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -11,7 +12,7 @@ import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -23,10 +24,12 @@ public class UserServiceImpl implements UserService {
         Long id = userRepository.save(user);
         user.setId(id);
         user = userRepository.getById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        log.info("Создан пользователь с id = " + id);
         return UserMapper.toUserDto(user);
     }
 
     public UserDto getById(Long id) {
+        log.info("Поиск пользователя с id = " + id);
         User user = userRepository.getById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         return UserMapper.toUserDto(user);
     }
@@ -36,11 +39,13 @@ public class UserServiceImpl implements UserService {
         validationEmail(updateUserRequest.getEmail());
         User userUp = UserMapper.updateUserFields(user, updateUserRequest);
         userRepository.update(id, userUp);
+        log.info("Пользователь с id = " + id + " обновлён");
         return UserMapper.toUserDto(userRepository.getById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден после обновления данных")));
     }
 
     public UserDto delete(Long id) {
         userRepository.getById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        log.info("Удалили пользователя с id = " + id);
         return UserMapper.toUserDto(userRepository.delete(id));
     }
 
