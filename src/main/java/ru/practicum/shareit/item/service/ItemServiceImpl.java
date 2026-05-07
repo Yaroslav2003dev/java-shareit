@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.booking.Status;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
@@ -23,7 +22,6 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -163,7 +161,7 @@ public class ItemServiceImpl implements ItemService {
         if (bookingsList.isEmpty()) {
             throw new ValidationException("Пользователь с id " + userId + " не арендовывал вещь с id = " + item.getId());
         }
-        boolean isCompletedBooking = bookingRepository.existsByItemIdAndBookerIdAndStatusAndEndBefore(itemId, userId, Status.APPROVED, LocalDateTime.now());
+        boolean isCompletedBooking = bookingRepository.hasCompletedBooking(itemId, userId);
         if (!isCompletedBooking) {
             throw new ValidationException("Пользователь написал комментарий не после завершения бронирования");
         }
