@@ -154,6 +154,7 @@ public class ItemServiceImpl implements ItemService {
         return ItemMapper.toItemDto(itemUp);
     }
 
+    @Transactional
     @Override
     public CommentDto addComment(Long userId, Long itemId, CommentDto commentDto) {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + "не найден"));
