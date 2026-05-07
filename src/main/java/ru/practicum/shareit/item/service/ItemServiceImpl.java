@@ -163,7 +163,7 @@ public class ItemServiceImpl implements ItemService {
         if (bookingsList.isEmpty()) {
             throw new ValidationException("Пользователь с id " + userId + " не арендовывал вещь с id = " + item.getId());
         }
-        Boolean isCompletedBooking = bookingRepository.existsByItemIdAndBookerIdAndStatusAndEndBefore(itemId, userId, Status.APPROVED, LocalDateTime.now());
+        boolean isCompletedBooking = bookingRepository.existsByItemIdAndBookerIdAndStatusAndEndBefore(itemId, userId, Status.APPROVED, LocalDateTime.now());
         if (!isCompletedBooking) {
             throw new ValidationException("Пользователь написал комментарий не после завершения бронирования");
         }
