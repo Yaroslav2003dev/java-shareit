@@ -49,7 +49,7 @@ public class BookingServiceImpl implements BookingService {
         }
         Booking booking = BookingMapper.toBooking(newBookingRequest, booker, item);
         booking = bookingRepository.save(booking);
-        log.info("Оформлено бронирование с id = "+booking.getId());
+        log.info("Оформлено бронирование с id = " + booking.getId());
         return BookingMapper.toBookingDto(booking);
     }
 
@@ -66,7 +66,7 @@ public class BookingServiceImpl implements BookingService {
         } else {
             booking.setStatus(Status.REJECTED);
         }
-        log.info("Отредактировано бронирование с id = "+bookingId+" пользователем "+userId);
+        log.info("Отредактировано бронирование с id = " + bookingId + " пользователем " + userId);
         return BookingMapper.toBookingDto(booking);
     }
 
@@ -76,7 +76,7 @@ public class BookingServiceImpl implements BookingService {
         if (!((userId.equals(booking.getItem().getOwner().getId())) || (userId.equals(booking.getBooker().getId())))) {
             throw new ValidationException("Пользователь с id = " + userId + " не является владельцем вещи или инициатором бронирования с id = " + bookingId);
         }
-        log.info("Просмотр бронирования с id "+bookingId+" пользователем "+userId);
+        log.info("Просмотр бронирования с id " + bookingId + " пользователем " + userId);
         return BookingMapper.toBookingDto(booking);
     }
 
