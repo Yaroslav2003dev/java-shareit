@@ -1,9 +1,13 @@
 package ru.practicum.shareit.item.mapper;
 
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.NewItemRequest;
-import ru.practicum.shareit.item.dto.UpdateItemRequest;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.item.dto.*;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 
 public class ItemMapper {
     public static ItemDto toItemDto(Item item) {
@@ -13,6 +17,19 @@ public class ItemMapper {
                 item.getDescription(),
                 item.getAvailable(),
                 item.getRequest() != null ? item.getRequest().getId() : null
+        );
+    }
+
+    public static ItemDateCommentDto toItemDateCommentDto(Item item, BookingDto bookingNext, BookingDto bookingLast, List<CommentDto> comments) {
+        return new ItemDateCommentDto(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.getAvailable(),
+                item.getRequest() != null ? item.getRequest().getId() : null,
+                bookingNext,
+                bookingLast,
+                comments
         );
     }
 
@@ -36,6 +53,27 @@ public class ItemMapper {
             item.setAvailable(updateItemRequest.getAvailable());
         }
         return item;
+    }
+
+    public static Comment toComment(CommentDto commentDto) {
+        Comment comment = new Comment();
+        comment.setText(commentDto.text());
+        return comment;
+    }
+
+    public static CommentDto toCommentDto(Comment comment) {
+        return new CommentDto(
+                comment.getId(),
+                comment.getText(),
+                comment.getAuthor().getName(),
+                LocalDateTime.ofInstant(comment.getCreated(), ZoneOffset.UTC)
+        );
+    }
+
+    public static List<CommentDto> toCommentDtoList(List<Comment> commentList) {
+        return commentList.stream()
+                .map(ItemMapper::toCommentDto)
+                .toList();
     }
 
 }
