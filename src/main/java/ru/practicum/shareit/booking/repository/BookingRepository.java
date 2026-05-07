@@ -50,8 +50,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("select b from Booking b WHERE b.item.id=?1 AND b.end >= ?2 AND b.start <= ?3")
     List<Booking> findBusyBookingsByItemId(Long itemId, LocalDateTime start, LocalDateTime end);
 
-    @Query("select count(b) > 0 from Booking b WHERE b.item.id=?1 AND b.booker.id=?2 AND b.end < CURRENT_TIMESTAMP AND b.status=?3")
-    Boolean existsCompletedBooking(Long itemId, Long bookerId, Status status);
+    boolean existsByItemIdAndBookerIdAndStatusAndEndBefore(
+            Long itemId,
+            Long bookerId,
+            Status status,
+            LocalDateTime end
+    );
 
     List<Booking> findAllByItemIdAndBookerId(Long itemId, Long bookerId);
 }

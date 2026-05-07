@@ -23,6 +23,7 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -158,14 +159,11 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public CommentDto addComment(Long userId, Long itemId, CommentDto commentDto) {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new NotFoundException("Предмет с id " + itemId + "не найден"));
-        userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-
         List<Booking> bookingsList = bookingRepository.findAllByItemIdAndBookerId(itemId, userId);
         if (bookingsList.isEmpty()) {
             throw new ValidationException("Пользователь с id " + userId + " не арендовывал вещь с id = " + item.getId());
         }
-        Boolean isCompletedBooking = bookingRepository.existsCompletedBooking(itemId, userId, Status.APPROVED);
+        Boolean isCompletedBooking = bookingRepository.existsByItemIdAndBookerIdAndStatusAndEndBefore(itemId, userId, Status.APPROVED, LocalDateTime.now());
         if (!isCompletedBooking) {
             throw new ValidationException("Пользователь написал комментарий не после завершения бронирования");
         }
