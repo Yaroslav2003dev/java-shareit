@@ -53,8 +53,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
             select (count(b) > 0)
             from Booking b
-            where b.item.id = :itemId
-              and b.booker.id = :userId
+            where b.item.id = ?1
+              and b.booker.id = ?2
               and b.end < CURRENT_TIMESTAMP
             """)
     boolean hasCompletedBooking(Long itemId, Long userId);
