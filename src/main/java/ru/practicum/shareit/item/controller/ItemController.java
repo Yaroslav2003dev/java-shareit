@@ -5,9 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.NewItemRequest;
-import ru.practicum.shareit.item.dto.UpdateItemRequest;
+import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.service.ItemService;
 
 import java.util.List;
@@ -32,17 +30,22 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ResponseEntity<ItemDto> get(@PathVariable Long itemId) {
-        return new ResponseEntity<>(itemService.getById(itemId), HttpStatus.OK);
+    public ResponseEntity<ItemDateCommentDto> get(@RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long itemId) {
+        return new ResponseEntity<>(itemService.getById(userId, itemId), HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<List<ItemDto>> getAll(@RequestHeader("X-Sharer-User-Id") Long userId) {
+    public ResponseEntity<List<ItemDateCommentDto>> getAll(@RequestHeader("X-Sharer-User-Id") Long userId) {
         return new ResponseEntity<>(itemService.getAll(userId), HttpStatus.OK);
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<ItemDto>> search(@RequestParam String text) {
         return new ResponseEntity<>(itemService.search(text), HttpStatus.OK);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public ResponseEntity<CommentDto> addComment(@RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long itemId, @RequestBody CommentDto commentDto) {
+        return new ResponseEntity<>(itemService.addComment(userId, itemId, commentDto), HttpStatus.CREATED);
     }
 }

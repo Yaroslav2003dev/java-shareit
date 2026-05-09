@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.model.Request;
 
 @Data
 @NoArgsConstructor
@@ -17,5 +17,5 @@ public class NewItemRequest {
     private String description;
     @NotNull
     private Boolean available;
-    private ItemRequest request;
+    private Request request;
 }
