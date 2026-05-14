@@ -171,4 +171,37 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void testDeleteUserEdge() throws Exception {
+        UserDto deleted = UserDto.builder()
+                .id(99L)
+                .email("x@mail.com")
+                .name("X")
+                .build();
+
+        when(userService.delete(any()))
+                .thenReturn(deleted);
+
+        mvc.perform(delete("/users/99"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(99));
+    }
+
+
+    @Test
+    void testCreateUserInvalidEmail() throws Exception {
+        NewUserRequest bad = NewUserRequest.builder()
+                .email("not-email")
+                .name("x")
+                .build();
+
+        when(userService.create(any()))
+                .thenThrow(new RuntimeException("bad email"));
+
+        mvc.perform(post("/users")
+                        .content(mapper.writeValueAsString(bad))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
 }

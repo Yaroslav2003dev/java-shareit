@@ -240,4 +240,23 @@ public class RequestControllerTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void testGetByRequestIdEmptyItems() throws Exception {
+        RequestItemDto empty = RequestItemDto.builder()
+                .id(1L)
+                .items(List.of())
+                .requestor(userDto)
+                .description("test")
+                .created(LocalDateTime.now())
+                .build();
+
+        when(requestService.getByRequestId(any()))
+                .thenReturn(empty);
+
+        mvc.perform(get("/requests/1")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0));
+    }
+
 }

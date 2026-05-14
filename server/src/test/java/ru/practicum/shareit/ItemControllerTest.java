@@ -301,4 +301,20 @@ public class ItemControllerTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void testAddCommentEdge() throws Exception {
+        CommentDto input = CommentDto.builder()
+                .text("ok")
+                .build();
+
+        when(itemService.addComment(any(), any(), any()))
+                .thenReturn(commentDto);
+
+        mvc.perform(post("/items/1/comment")
+                        .header("X-Sharer-User-Id", 1)
+                        .content(mapper.writeValueAsString(input))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated());
+    }
+
 }

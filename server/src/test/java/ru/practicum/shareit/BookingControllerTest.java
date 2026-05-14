@@ -21,6 +21,7 @@ import java.util.List;
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -59,6 +60,12 @@ public class BookingControllerTest {
             .status(Status.WAITING)
             .build();
 
+    private NewBookingRequest request = NewBookingRequest.builder()
+            .itemId(1L)
+            .bookerId(1L)
+            .start(LocalDateTime.now())
+            .end(LocalDateTime.now().plusDays(2))
+            .build();
 
     @Test
     void testAddBooking() throws Exception {
@@ -67,7 +74,7 @@ public class BookingControllerTest {
 
         mvc.perform(post("/bookings")
                         .header("X-Sharer-User-Id", 1)
-                        .content(mapper.writeValueAsString(bookingDto))
+                        .content(mapper.writeValueAsString(request))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON))
@@ -237,16 +244,40 @@ public class BookingControllerTest {
 
     @Test
     void testEditBookingRejected() throws Exception {
-        BookingDto rejected = bookingDto.toBuilder()
+        BookingDto rejected = BookingDto.builder()
+                .id(1L)
+                .start(LocalDateTime.now())
+                .end(LocalDateTime.now().plusDays(1))
+                .item(itemDto)
+                .booker(userDto)
                 .status(Status.REJECTED)
                 .build();
 
-        when(bookingService.editBooking(any(), any(), any()))
+        when(bookingService.editBooking(any(), any(), eq(false)))
                 .thenReturn(rejected);
 
-        mvc.perform(patch("/bookings/" + bookingDto.id())
+        mvc.perform(patch("/bookings/1")
                         .param("approved", "false")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+    }
+
+    @Test
+    void testGetAllBookingsBookerByState() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings")
+                        .param("state", "PAST")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/bookings")
+                        .param("state", "FUTURE")
                         .header("X-Sharer-User-Id", 1))
                 .andExpect(status().isOk());
     }
+
+
 }

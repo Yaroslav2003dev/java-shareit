@@ -1,5 +1,6 @@
 package ru.practicum.shareit.user.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> create(@RequestBody NewUserRequest newUserRequest) {
+    public ResponseEntity<UserDto> create(@Valid @RequestBody NewUserRequest newUserRequest) {
         return new ResponseEntity<>(userService.create(newUserRequest), HttpStatus.CREATED);
     }
 
