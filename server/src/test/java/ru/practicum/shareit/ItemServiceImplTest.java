@@ -51,7 +51,5 @@ public class ItemServiceImplTest {
         assertThat(item.getDescription(), equalTo(itemDto.description()));
         assertThat(item.getName(), equalTo(itemDto.name()));
         assertThat(item.getAvailable(), equalTo(itemDto.available()));
-        assertThat(item.getRequest(), equalTo(item.getRequest()));
-        assertThat(item.getOwner().getId(), equalTo(item.getId()));
     }
 }

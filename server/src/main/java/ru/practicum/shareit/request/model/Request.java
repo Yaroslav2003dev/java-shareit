@@ -25,5 +25,6 @@ public class Request {
     private String description;
     @ManyToOne(fetch = FetchType.LAZY)
     private User requestor;
+    @Builder.Default
     private Instant created = Instant.now();
 }

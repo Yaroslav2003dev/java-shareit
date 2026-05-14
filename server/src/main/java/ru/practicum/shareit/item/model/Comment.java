@@ -22,5 +22,6 @@ public class Comment {
     private Item item;
     @ManyToOne(fetch = FetchType.LAZY)
     private User author;
+    @Builder.Default
     private Instant created = Instant.now();
 }
