@@ -7,18 +7,22 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.NewItemRequest;
+import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.user.dto.NewUserRequest;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
+import java.util.List;
+
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Transactional
 @SpringBootTest(
@@ -51,5 +55,163 @@ public class ItemServiceImplTest {
         assertThat(item.getDescription(), equalTo(itemDto.description()));
         assertThat(item.getName(), equalTo(itemDto.name()));
         assertThat(item.getAvailable(), equalTo(itemDto.available()));
+    }
+
+    @Test
+    void testGetItemById() {
+        NewUserRequest newUser = NewUserRequest.builder()
+                .email("test2@mail")
+                .name("Пользователь")
+                .build();
+
+        UserDto userDto = userService.create(newUser);
+
+        NewItemRequest newItem = NewItemRequest.builder()
+                .name("Дрель")
+                .description("Хорошая дрель")
+                .available(TRUE)
+                .build();
+
+        ItemDto savedItem = itemService.create(userDto.id(), newItem);
+
+        ItemDateCommentDto foundItem =
+                itemService.getById(userDto.id(), savedItem.id());
+
+        assertThat(foundItem.id(), equalTo(savedItem.id()));
+        assertThat(foundItem.name(), equalTo(savedItem.name()));
+        assertThat(foundItem.description(), equalTo(savedItem.description()));
+        assertThat(foundItem.available(), equalTo(savedItem.available()));
+    }
+
+    @Test
+    void testGetAllItems() {
+        NewUserRequest newUser = NewUserRequest.builder()
+                .email("test3@mail")
+                .name("Владелец")
+                .build();
+
+        UserDto userDto = userService.create(newUser);
+
+        NewItemRequest item1 = NewItemRequest.builder()
+                .name("Item1")
+                .description("Desc1")
+                .available(TRUE)
+                .build();
+
+        NewItemRequest item2 = NewItemRequest.builder()
+                .name("Item2")
+                .description("Desc2")
+                .available(TRUE)
+                .build();
+
+        itemService.create(userDto.id(), item1);
+        itemService.create(userDto.id(), item2);
+
+        List<ItemDateCommentDto> items =
+                itemService.getAll(userDto.id());
+
+        assertThat(items, hasSize(2));
+    }
+
+    @Test
+    void testSearchItems() {
+        NewUserRequest newUser = NewUserRequest.builder()
+                .email("test4@mail")
+                .name("Поиск")
+                .build();
+
+        UserDto userDto = userService.create(newUser);
+
+        NewItemRequest newItem = NewItemRequest.builder()
+                .name("Шуруповерт")
+                .description("Мощный инструмент")
+                .available(TRUE)
+                .build();
+
+        itemService.create(userDto.id(), newItem);
+
+        List<ItemDto> result = itemService.search("инструмент");
+
+        assertThat(result, hasSize(1));
+        assertThat(result.getFirst().description(),
+                equalTo("Мощный инструмент"));
+    }
+
+    @Test
+    void testSearchEmptyText() {
+        List<ItemDto> result = itemService.search("");
+
+        assertThat(result, hasSize(0));
+    }
+
+    @Test
+    void testUpdateItem() {
+        NewUserRequest newUser = NewUserRequest.builder()
+                .email("test5@mail")
+                .name("Обновление")
+                .build();
+
+        UserDto userDto = userService.create(newUser);
+
+        NewItemRequest newItem = NewItemRequest.builder()
+                .name("Старое имя")
+                .description("Старое описание")
+                .available(TRUE)
+                .build();
+
+        ItemDto savedItem = itemService.create(userDto.id(), newItem);
+
+        UpdateItemRequest updateRequest = UpdateItemRequest.builder()
+                .name("Новое имя")
+                .description("Новое описание")
+                .available(FALSE)
+                .build();
+
+        ItemDto updatedItem = itemService.update(
+                userDto.id(),
+                savedItem.id(),
+                updateRequest
+        );
+
+        assertThat(updatedItem.name(), equalTo("Новое имя"));
+        assertThat(updatedItem.description(),
+                equalTo("Новое описание"));
+        assertThat(updatedItem.available(), equalTo(FALSE));
+    }
+
+    @Test
+    void testAddCommentWithoutBooking() {
+        NewUserRequest ownerRequest = NewUserRequest.builder()
+                .email("owner@mail")
+                .name("Owner")
+                .build();
+
+        UserDto owner = userService.create(ownerRequest);
+
+        NewUserRequest authorRequest = NewUserRequest.builder()
+                .email("author@mail")
+                .name("Author")
+                .build();
+
+        UserDto author = userService.create(authorRequest);
+
+        NewItemRequest itemRequest = NewItemRequest.builder()
+                .name("Дрель")
+                .description("Описание")
+                .available(TRUE)
+                .build();
+
+        ItemDto item = itemService.create(owner.id(), itemRequest);
+
+        CommentDto commentDto = CommentDto.builder()
+                .text("Отличная вещь")
+                .build();
+
+        assertThrows(RuntimeException.class,
+                () -> itemService.addComment(
+                        author.id(),
+                        item.id(),
+                        commentDto
+                ));
     }
 }

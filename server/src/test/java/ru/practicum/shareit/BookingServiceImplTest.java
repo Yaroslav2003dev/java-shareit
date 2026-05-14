@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingDto;
 import ru.practicum.shareit.booking.NewBookingRequest;
+import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -19,6 +20,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -36,7 +38,7 @@ public class BookingServiceImplTest {
     private final EntityManager em;
 
     @Test
-    void testSaveBooking() {
+    void testSave1Booking() {
         LocalDateTime start = LocalDateTime.now().plusDays(1);
         LocalDateTime end = start.plusDays(2);
         NewUserRequest newUser1 = NewUserRequest.builder()
@@ -76,5 +78,122 @@ public class BookingServiceImplTest {
         assertThat(booking.getStart(), equalTo(bookingDto.start()));
         assertThat(booking.getItem().getId(), equalTo(bookingDto.item().id()));
         assertThat(booking.getStatus(), equalTo(bookingDto.status()));
+    }
+
+    @Test
+    void testSave2Booking() {
+        BookingDto bookingDto = createBooking();
+        assertThat(bookingDto.id(), notNullValue());
+    }
+
+    @Test
+    void testGetBookingById() {
+        UserDto owner = createUser("owner@mail", "Owner");
+        UserDto booker = createUser("booker@mail", "Booker");
+
+        ItemDto item = createItem(owner.id());
+
+        BookingDto booking = createBooking(owner.id(), booker.id(), item.id());
+
+        BookingDto found = bookingService.getBookingById(booker.id(), booking.id());
+
+        assertThat(found.id(), equalTo(booking.id()));
+        assertThat(found.item().id(), equalTo(item.id()));
+        assertThat(found.booker().id(), equalTo(booker.id()));
+    }
+
+    @Test
+    void testEditBookingApprove() {
+        UserDto owner = createUser("owner2@mail", "Owner2");
+        UserDto booker = createUser("booker2@mail", "Booker2");
+
+        ItemDto item = createItem(owner.id());
+        BookingDto booking = createBooking(owner.id(), booker.id(), item.id());
+
+        BookingDto updated = bookingService.editBooking(owner.id(), booking.id(), true);
+
+        assertThat(updated.status().name(), equalTo("APPROVED"));
+    }
+
+    @Test
+    void testEditBookingReject() {
+        UserDto owner = createUser("owner3@mail", "Owner3");
+        UserDto booker = createUser("booker3@mail", "Booker3");
+
+        ItemDto item = createItem(owner.id());
+        BookingDto booking = createBooking(owner.id(), booker.id(), item.id());
+
+        BookingDto updated = bookingService.editBooking(owner.id(), booking.id(), false);
+
+        assertThat(updated.status().name(), equalTo("REJECTED"));
+    }
+
+    @Test
+    void testGetAllBookingsBooker() {
+        UserDto owner = createUser("owner4@mail", "Owner4");
+        UserDto booker = createUser("booker4@mail", "Booker4");
+
+        ItemDto item = createItem(owner.id());
+        createBooking(owner.id(), booker.id(), item.id());
+
+        List<BookingDto> bookings =
+                bookingService.getAllBookingsBooker(booker.id(), State.ALL);
+
+        assertThat(bookings.size(), equalTo(1));
+    }
+
+    @Test
+    void testGetAllBookingsOwner() {
+        UserDto owner = createUser("owner5@mail", "Owner5");
+        UserDto booker = createUser("booker5@mail", "Booker5");
+
+        ItemDto item = createItem(owner.id());
+        createBooking(owner.id(), booker.id(), item.id());
+
+        List<BookingDto> bookings =
+                bookingService.getAllBookingsOwner(owner.id(), State.ALL);
+
+        assertThat(bookings.size(), equalTo(1));
+    }
+
+
+    private BookingDto createBooking() {
+        UserDto owner = createUser("o@mail", "O");
+        UserDto booker = createUser("b@mail", "B");
+        ItemDto item = createItem(owner.id());
+        return createBooking(owner.id(), booker.id(), item.id());
+    }
+
+    private BookingDto createBooking(Long ownerId, Long bookerId, Long itemId) {
+        LocalDateTime start = LocalDateTime.now().plusDays(1);
+        LocalDateTime end = start.plusDays(2);
+
+        NewBookingRequest request = NewBookingRequest.builder()
+                .start(start)
+                .end(end)
+                .bookerId(bookerId)
+                .itemId(itemId)
+                .build();
+
+        return bookingService.addBooking(bookerId, request);
+    }
+
+    private UserDto createUser(String email, String name) {
+        return userService.create(
+                NewUserRequest.builder()
+                        .email(email)
+                        .name(name)
+                        .build()
+        );
+    }
+
+    private ItemDto createItem(Long ownerId) {
+        return itemService.create(ownerId,
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(TRUE)
+                        .build()
+        );
     }
 }

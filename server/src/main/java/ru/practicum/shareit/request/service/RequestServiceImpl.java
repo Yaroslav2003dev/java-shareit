@@ -67,7 +67,6 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public RequestItemDto getByRequestId(Long requestId) {
-        userRepository.findById(requestId).orElseThrow(() -> new NotFoundException("В заголовке передан не существующий userId"));
         Request request = requestRepository.findById(requestId).orElseThrow(() -> new NotFoundException("Запрос c id " + requestId + " отсутствует"));
         List<Item> itemList = itemRepository.findAllByRequestId(Set.of(requestId));
         List<ItemOwnerDto> itemOwnerDtoList = RequestMapper.toItemOwnerDtoList(itemList);
