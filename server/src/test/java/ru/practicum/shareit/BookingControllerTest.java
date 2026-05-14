@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.*;
 import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.dto.UserDto;
 
@@ -156,6 +157,82 @@ public class BookingControllerTest {
                 .andExpect(jsonPath("$[0].booker.id", is(bookingDto.booker().id()), Long.class))
                 .andExpect(jsonPath("$[0].booker.name", is(bookingDto.booker().name())))
                 .andExpect(jsonPath("$[0].status").value(Status.WAITING.name()));
+    }
+
+    @Test
+    void testGetAllBookingsBookerEmpty() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/bookings")
+                        .param("state", "ALL")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testGetAllBookingsOwnerEmpty() throws Exception {
+        when(bookingService.getAllBookingsOwner(any(), any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testEditBookingFalse() throws Exception {
+        BookingDto rejected = BookingDto.builder()
+                .id(1L)
+                .start(bookingDto.start())
+                .end(bookingDto.end())
+                .item(bookingDto.item())
+                .booker(bookingDto.booker())
+                .status(Status.REJECTED)
+                .build();
+
+        when(bookingService.editBooking(any(), any(), any()))
+                .thenReturn(rejected);
+
+        mvc.perform(patch("/bookings/" + bookingDto.id())
+                        .param("approved", "false")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(Status.REJECTED.name()));
+    }
+
+    @Test
+    void testGetAllBookingsBookerDifferentState() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings")
+                        .param("state", "WAITING")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value(Status.WAITING.name()));
+    }
+
+    @Test
+    void testGetBookingByIdNotFound() throws Exception {
+        when(bookingService.getBookingById(any(), any()))
+                .thenThrow(NotFoundException.class);
+
+        mvc.perform(get("/bookings/999")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
     }
 
 }
