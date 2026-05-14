@@ -220,4 +220,24 @@ public class RequestControllerTest {
                 .andExpect(jsonPath("$.description", is("Only desc")));
     }
 
+    @Test
+    void testGetAllRequestsEmpty() throws Exception {
+        when(requestService.getAllRequests(any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/requests/all")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetMyRequestsEmpty() throws Exception {
+        when(requestService.getMyRequests(any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/requests")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
 }

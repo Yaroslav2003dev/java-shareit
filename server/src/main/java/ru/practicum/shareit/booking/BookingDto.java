@@ -9,6 +9,6 @@ import java.time.LocalDateTime;
 /**
  * TODO Sprint add-bookings.
  */
-@Builder
+@Builder(toBuilder = true)
 public record BookingDto(Long id, LocalDateTime start, LocalDateTime end, ItemDto item, UserDto booker, Status status) {
 }

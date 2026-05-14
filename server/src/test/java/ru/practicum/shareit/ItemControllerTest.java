@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.controller.ItemController;
 import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.service.ItemService;
@@ -177,6 +178,127 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.id", is(commentDto.id()), Long.class))
                 .andExpect(jsonPath("$.text", is(commentDto.text())))
                 .andExpect(jsonPath("$.authorName", is(commentDto.authorName())));
+    }
+
+    @Test
+    void testSearchItemsEmpty() throws Exception {
+        when(itemService.search(any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/items/search")
+                        .param("text", "unknown")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testGetAllItemsEmpty() throws Exception {
+        when(itemService.getAll(any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/items")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testSearchItemsBlankText() throws Exception {
+        when(itemService.search(any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/items/search")
+                        .param("text", "")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testGetItemWithEmptyRelations() throws Exception {
+
+        ItemDateCommentDto emptyDto = ItemDateCommentDto.builder()
+                .id(1L)
+                .comments(List.of())
+                .lastBooking(null)
+                .nextBooking(null)
+                .available(true)
+                .description("desc")
+                .name("item")
+                .build();
+
+        when(itemService.getById(any(), any()))
+                .thenReturn(emptyDto);
+
+        mvc.perform(get("/items/" + emptyDto.id())
+                        .header("X-Sharer-User-Id", 1)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comments").isEmpty())
+                .andExpect(jsonPath("$.lastBooking").doesNotExist())
+                .andExpect(jsonPath("$.nextBooking").doesNotExist());
+    }
+
+    @Test
+    void testUpdateItemPartial() throws Exception {
+
+        ItemDto partial = ItemDto.builder()
+                .id(1L)
+                .name("PS5")
+                .description("desc")
+                .available(true)
+                .build();
+
+        when(itemService.update(any(), any(), any()))
+                .thenReturn(partial);
+
+        mvc.perform(patch("/items/" + partial.id())
+                        .header("X-Sharer-User-Id", 1)
+                        .content(mapper.writeValueAsString(new UpdateItemRequest()))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("PS5"));
+    }
+
+    @Test
+    void testGetItemNotFound() throws Exception {
+        when(itemService.getById(any(), any()))
+                .thenThrow(new NotFoundException("Не найден"));
+
+        mvc.perform(get("/items/999")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testSearchItemsEmptyText() throws Exception {
+        when(itemService.search(""))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/items/search")
+                        .param("text", "")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testSearchItemsNoResults() throws Exception {
+        when(itemService.search("unknown"))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/items/search")
+                        .param("text", "unknown")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
     }
 
 }

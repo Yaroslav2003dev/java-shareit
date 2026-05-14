@@ -235,4 +235,18 @@ public class BookingControllerTest {
                 .andExpect(status().is4xxClientError());
     }
 
+    @Test
+    void testEditBookingRejected() throws Exception {
+        BookingDto rejected = bookingDto.toBuilder()
+                .status(Status.REJECTED)
+                .build();
+
+        when(bookingService.editBooking(any(), any(), any()))
+                .thenReturn(rejected);
+
+        mvc.perform(patch("/bookings/" + bookingDto.id())
+                        .param("approved", "false")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
 }

@@ -141,7 +141,7 @@ public class UserControllerTest {
     }
 
     @Test
-    void testDeleteUserNotFound() throws Exception {
+    void test1DeleteUserNotFound() throws Exception {
         doThrow(new NotFoundException("User not found"))
                 .when(userService).delete(any());
 
@@ -160,4 +160,15 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated());
     }
+
+    @Test
+    void test2GetUserNotFound() throws Exception {
+        when(userService.getById(any()))
+                .thenThrow(new NotFoundException("Пользователь не найден"));
+
+        mvc.perform(get("/users/999")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
 }
