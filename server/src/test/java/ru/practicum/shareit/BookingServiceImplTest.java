@@ -26,6 +26,7 @@ import static java.lang.Boolean.TRUE;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Transactional
 @SpringBootTest(
@@ -195,5 +196,76 @@ public class BookingServiceImplTest {
                         .available(TRUE)
                         .build()
         );
+    }
+
+    @Test
+    void testGetBookingByIdForbidden() {
+        UserDto owner = userService.create(new NewUserRequest("owner@mail", "Owner"));
+        UserDto booker = userService.create(new NewUserRequest("booker@mail", "Booker"));
+        UserDto stranger = userService.create(new NewUserRequest("stranger@mail", "Stranger"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        BookingDto booking = bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        assertThrows(RuntimeException.class,
+                () -> bookingService.getBookingById(stranger.id(), booking.id()));
+    }
+
+    @Test
+    void testEditBookingRejectByNonOwner() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+        UserDto booker = userService.create(new NewUserRequest("b@mail", "B"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        BookingDto booking = bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        assertThrows(RuntimeException.class,
+                () -> bookingService.editBooking(booker.id(), booking.id(), false));
+    }
+
+    @Test
+    void testGetAllBookingsBookerStates() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+        UserDto booker = userService.create(new NewUserRequest("b@mail", "B"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsBooker(booker.id(), State.ALL);
+        bookingService.getAllBookingsBooker(booker.id(), State.CURRENT);
+        bookingService.getAllBookingsBooker(booker.id(), State.FUTURE);
     }
 }

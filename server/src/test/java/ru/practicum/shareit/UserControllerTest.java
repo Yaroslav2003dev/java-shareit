@@ -8,6 +8,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.controller.UserController;
 import ru.practicum.shareit.user.dto.NewUserRequest;
 import ru.practicum.shareit.user.dto.UpdateUserRequest;
@@ -18,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -117,4 +119,45 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.email", is(userDto.email())));
     }
 
+
+    @Test
+    void testUpdateUserEmptyBody() throws Exception {
+        mvc.perform(patch("/users/" + userDto.id())
+                        .content("{}")
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetUserNotFound() throws Exception {
+        doThrow(new NotFoundException("Пользователь не найден"))
+                .when(userService).getById(any());
+
+        mvc.perform(get("/users/" + userDto.id())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testDeleteUserNotFound() throws Exception {
+        doThrow(new NotFoundException("User not found"))
+                .when(userService).delete(any());
+
+        mvc.perform(delete("/users/" + userDto.id())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testCreateUserReturnsNull() throws Exception {
+        when(userService.create(any()))
+                .thenReturn(null);
+
+        mvc.perform(post("/users")
+                        .content(mapper.writeValueAsString(newUserRequest))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated());
+    }
 }

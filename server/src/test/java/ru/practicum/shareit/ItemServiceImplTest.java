@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.NewBookingRequest;
+import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
@@ -14,6 +16,7 @@ import ru.practicum.shareit.user.dto.NewUserRequest;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static java.lang.Boolean.FALSE;
@@ -32,6 +35,7 @@ public class ItemServiceImplTest {
     private final UserService userService;
     private final ItemService itemService;
     private final EntityManager em;
+    private final BookingService bookingService;
 
     @Test
     void testSaveItem() {
@@ -213,5 +217,58 @@ public class ItemServiceImplTest {
                         item.id(),
                         commentDto
                 ));
+    }
+
+    @Test
+    void testSearchEmptyAndBlank() {
+        assertThat(itemService.search(""), hasSize(0));
+        assertThat(itemService.search("   "), hasSize(0));
+    }
+
+    @Test
+    void testUpdateForbiddenUser() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+        UserDto stranger = userService.create(new NewUserRequest("s@mail", "S"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        assertThrows(RuntimeException.class,
+                () -> itemService.update(stranger.id(), item.id(),
+                        UpdateItemRequest.builder()
+                                .name("hack")
+                                .build()));
+    }
+
+    @Test
+    void testAddCommentSuccessPath() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+        UserDto booker = userService.create(new NewUserRequest("b@mail", "B"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().minusDays(2))
+                        .end(LocalDateTime.now().minusDays(1))
+                        .itemId(item.id())
+                        .build());
+
+        CommentDto comment = CommentDto.builder()
+                .text("Good")
+                .build();
+
+        var result = itemService.addComment(booker.id(), item.id(), comment);
+
+        assertThat(result.text(), equalTo("Good"));
     }
 }

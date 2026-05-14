@@ -93,7 +93,7 @@ public class RequestServiceImplTest {
     }
 
     @Test
-    void testGetAllRequests() {
+    void test1GetAllRequests() {
         NewUserRequest firstUser = NewUserRequest.builder()
                 .email("first@mail")
                 .name("First")
@@ -143,5 +143,29 @@ public class RequestServiceImplTest {
         assertThat(foundRequest.created(), notNullValue());
     }
 
+    @Test
+    void testGetMyRequestsEmpty() {
+        UserDto user = userService.create(new NewUserRequest("u@mail", "U"));
+
+        var result = requestService.getMyRequests(user.id());
+
+        assertThat(result, hasSize(0));
+    }
+
+    @Test
+    void test2GetAllRequests() {
+        UserDto user = userService.create(new NewUserRequest("u@mail", "U"));
+
+        requestService.addRequest(
+                RequestDto.builder()
+                        .description("Нужна вещь")
+                        .build(),
+                user.id()
+        );
+
+        var result = requestService.getAllRequests(user.id());
+
+        assertThat(result.size(), equalTo(1));
+    }
 
 }

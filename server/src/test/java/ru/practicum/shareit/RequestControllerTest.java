@@ -8,6 +8,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.request.RequestController;
 import ru.practicum.shareit.request.dto.ItemOwnerDto;
 import ru.practicum.shareit.request.dto.RequestDto;
@@ -157,6 +158,66 @@ public class RequestControllerTest {
                 .andExpect(jsonPath("$.requestor.name", is(requestItemDto.requestor().name())))
                 .andExpect(jsonPath("$.items[*].name", contains("Item 1", "Item 2")))
                 .andExpect(jsonPath("$.items[*].id", contains(1, 2)));
+    }
+
+    @Test
+    void testGetMyRequestsEmptyList() throws Exception {
+        when(requestService.getMyRequests(any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/requests")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testGetAllRequestsEmptyList() throws Exception {
+        when(requestService.getAllRequests(any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/requests/all")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testGetByRequestIdNotFound() throws Exception {
+        when(requestService.getByRequestId(any()))
+                .thenThrow(NotFoundException.class);
+
+        mvc.perform(get("/requests/999")
+                        .header("X-Sharer-User-Id", 1)
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void testAddRequestMinimal() throws Exception {
+        RequestDto minimal = RequestDto.builder()
+                .id(1L)
+                .description("Only desc")
+                .requestor(userDto)
+                .created(LocalDateTime.now())
+                .build();
+
+        when(requestService.addRequest(any(), any()))
+                .thenReturn(minimal);
+
+        mvc.perform(post("/requests")
+                        .header("X-Sharer-User-Id", 1)
+                        .content(mapper.writeValueAsString(minimal))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.description", is("Only desc")));
     }
 
 }
