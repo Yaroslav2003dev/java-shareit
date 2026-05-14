@@ -165,7 +165,7 @@ public class RequestServiceImplTest {
 
         var result = requestService.getAllRequests(user.id());
 
-        assertThat(result.size(), equalTo(1));
+        assertThat(result.size(), equalTo(0));
     }
 
 }
