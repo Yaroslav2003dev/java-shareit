@@ -168,4 +168,32 @@ public class RequestServiceImplTest {
         assertThat(result.size(), equalTo(0));
     }
 
+    @Test
+    void testGetAllRequestsDifferentUsersBranch() {
+        UserDto user1 = userService.create(new NewUserRequest("a@mail", "A"));
+        UserDto user2 = userService.create(new NewUserRequest("b@mail", "B"));
+
+        requestService.addRequest(
+                RequestDto.builder().description("req1").build(),
+                user1.id()
+        );
+
+        var result = requestService.getAllRequests(user2.id());
+
+        assertThat(result, hasSize(1));
+    }
+
+
+    @Test
+    void testGetMyRequestsOrderingBranch() {
+        UserDto user = userService.create(new NewUserRequest("o@mail", "O"));
+
+        requestService.addRequest(RequestDto.builder().description("1").build(), user.id());
+        requestService.addRequest(RequestDto.builder().description("2").build(), user.id());
+
+        var result = requestService.getMyRequests(user.id());
+
+        assertThat(result.size(), equalTo(2));
+    }
+
 }

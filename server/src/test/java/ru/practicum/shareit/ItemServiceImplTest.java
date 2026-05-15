@@ -62,6 +62,12 @@ public class ItemServiceImplTest {
     }
 
     @Test
+    void testSearchNullBranch() {
+        assertThat(itemService.search(null), hasSize(0));
+        assertThat(itemService.search(" "), hasSize(0));
+    }
+
+    @Test
     void testGetItemById() {
         NewUserRequest newUser = NewUserRequest.builder()
                 .email("test2@mail")
@@ -327,6 +333,25 @@ public class ItemServiceImplTest {
         assertThrows(RuntimeException.class,
                 () -> itemService.addComment(user.id(), item.id(),
                         CommentDto.builder().text("bad").build()));
+    }
+
+    @Test
+    void testGetItemOwnerVsStrangerBranch() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+        UserDto stranger = userService.create(new NewUserRequest("s@mail", "S"));
+
+        var item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        var ownerView = itemService.getById(owner.id(), item.id());
+        var strangerView = itemService.getById(stranger.id(), item.id());
+
+        assertThat(ownerView.id(), equalTo(item.id()));
+        assertThat(strangerView.id(), equalTo(item.id()));
     }
 
 }
