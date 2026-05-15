@@ -279,5 +279,70 @@ public class BookingControllerTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void testGetAllBookingsBookerUnknownState() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenThrow(new IllegalArgumentException());
+
+        mvc.perform(get("/bookings")
+                        .param("state", "UNKNOWN")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void testGetAllBookingsBookerStateCurrent() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings")
+                        .param("state", "CURRENT")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetAllBookingsBookerStatePast() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings")
+                        .param("state", "PAST")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetAllBookingsBookerStateFuture() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings")
+                        .param("state", "FUTURE")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetAllBookingsBookerStateWaiting() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings")
+                        .param("state", "WAITING")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetAllBookingsBookerStateRejected() throws Exception {
+        when(bookingService.getAllBookingsBooker(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings")
+                        .param("state", "REJECTED")
+                        .header("X-Sharer-User-Id", 1))
+                .andExpect(status().isOk());
+    }
 
 }
