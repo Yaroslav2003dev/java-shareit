@@ -345,4 +345,98 @@ public class BookingControllerTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void testGetAllBookingsOwnerRejectedBranch() throws Exception {
+        BookingDto rejected = BookingDto.builder()
+                .id(2L)
+                .start(bookingDto.start())
+                .end(bookingDto.end())
+                .item(bookingDto.item())
+                .booker(bookingDto.booker())
+                .status(Status.REJECTED)
+                .build();
+
+        when(bookingService.getAllBookingsOwner(any(), eq(State.REJECTED)))
+                .thenReturn(List.of(rejected));
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("state", "REJECTED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("REJECTED"));
+    }
+
+    @Test
+    void testGetAllBookingsOwnerDefaultBranch() throws Exception {
+        when(bookingService.getAllBookingsOwner(any(), any()))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("state", "ALL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id", is(bookingDto.id()), Long.class));
+    }
+
+    @Test
+    void testGetAllBookingsOwnerWaitingBranch() throws Exception {
+        BookingDto waiting = bookingDto.toBuilder()
+                .status(Status.WAITING)
+                .build();
+
+        when(bookingService.getAllBookingsOwner(any(), eq(State.WAITING)))
+                .thenReturn(List.of(waiting));
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("state", "WAITING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("WAITING"));
+    }
+
+    @Test
+    void testGetAllBookingsOwnerFutureBranch() throws Exception {
+        when(bookingService.getAllBookingsOwner(any(), eq(State.FUTURE)))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("state", "FUTURE"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetAllBookingsOwnerCurrentBranch() throws Exception {
+        when(bookingService.getAllBookingsOwner(any(), eq(State.CURRENT)))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("state", "CURRENT"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetAllBookingsOwnerPastBranch() throws Exception {
+        when(bookingService.getAllBookingsOwner(any(), eq(State.PAST)))
+                .thenReturn(List.of(bookingDto));
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("state", "PAST"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testGetAllBookingsOwnerEmptyBranch() throws Exception {
+        when(bookingService.getAllBookingsOwner(any(), any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", 1)
+                        .param("state", "ALL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
 }

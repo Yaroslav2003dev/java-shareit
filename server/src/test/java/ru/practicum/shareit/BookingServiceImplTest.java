@@ -12,6 +12,8 @@ import ru.practicum.shareit.booking.NewBookingRequest;
 import ru.practicum.shareit.booking.State;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.NewItemRequest;
 import ru.practicum.shareit.item.service.ItemService;
@@ -21,6 +23,7 @@ import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -268,4 +271,336 @@ public class BookingServiceImplTest {
         bookingService.getAllBookingsBooker(booker.id(), State.CURRENT);
         bookingService.getAllBookingsBooker(booker.id(), State.FUTURE);
     }
+
+    @Test
+    void testStateFromValidIgnoreCase() {
+        assertThat(State.from("all").get(), equalTo(State.ALL));
+        assertThat(State.from("CURRENT").get(), equalTo(State.CURRENT));
+    }
+
+    @Test
+    void testStateFromInvalidReturnsEmpty() {
+        assertThat(State.from("UNKNOWN"), equalTo(Optional.empty()));
+    }
+
+    @Test
+    void testStateFromNullReturnsEmpty() {
+        assertThat(State.from(null), equalTo(Optional.empty()));
+    }
+
+    @Test
+    void testGetAllBookingsBookerDefaultBranch() {
+        UserDto owner = userService.create(new NewUserRequest("o1@mail", "O1"));
+        UserDto booker = userService.create(new NewUserRequest("b1@mail", "B1"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        List<BookingDto> result =
+                bookingService.getAllBookingsBooker(booker.id(), State.ALL);
+
+        assertThat(result.size(), equalTo(1));
+    }
+
+    @Test
+    void testGetAllBookingsOwnerDefaultBranch() {
+        UserDto owner = userService.create(new NewUserRequest("o2@mail", "O2"));
+        UserDto booker = userService.create(new NewUserRequest("b2@mail", "B2"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        List<BookingDto> result =
+                bookingService.getAllBookingsOwner(owner.id(), State.ALL);
+
+        assertThat(result.size(), equalTo(1));
+    }
+
+    @Test
+    void testGetAllBookingsBookerRejectedBranch() {
+        UserDto owner = createUser("o@mail1", "O");
+        UserDto booker = createUser("b@mail1", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsBooker(booker.id(), State.REJECTED);
+    }
+
+    @Test
+    void testGetAllBookingsBookerWaitingBranch() {
+        UserDto owner = createUser("o@mail2", "O");
+        UserDto booker = createUser("b@mail2", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsBooker(booker.id(), State.WAITING);
+    }
+
+    @Test
+    void testGetAllBookingsBookerFutureBranch() {
+        UserDto owner = createUser("o@mail3", "O");
+        UserDto booker = createUser("b@mail3", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(10))
+                        .end(LocalDateTime.now().plusDays(20))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsBooker(booker.id(), State.FUTURE);
+    }
+
+    @Test
+    void testGetAllBookingsBookerCurrentBranch() {
+        UserDto owner = createUser("o@mail4", "O");
+        UserDto booker = createUser("b@mail4", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().minusHours(1))
+                        .end(LocalDateTime.now().plusHours(1))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsBooker(booker.id(), State.CURRENT);
+    }
+
+    @Test
+    void testOwnerRejected() {
+        UserDto owner = createUser("o@mail20", "O");
+        UserDto booker = createUser("b@mail20", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsOwner(owner.id(), State.REJECTED);
+    }
+
+    @Test
+    void testOwnerWaiting() {
+        UserDto owner = createUser("o@mail21", "O");
+        UserDto booker = createUser("b@mail21", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(1))
+                        .end(LocalDateTime.now().plusDays(2))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsOwner(owner.id(), State.WAITING);
+    }
+
+    @Test
+    void testOwnerFuture() {
+        UserDto owner = createUser("o@mail22", "O");
+        UserDto booker = createUser("b@mail22", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().plusDays(10))
+                        .end(LocalDateTime.now().plusDays(20))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsOwner(owner.id(), State.FUTURE);
+    }
+
+    @Test
+    void testOwnerCurrent() {
+        UserDto owner = createUser("o@mail23", "O");
+        UserDto booker = createUser("b@mail23", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().minusHours(1))
+                        .end(LocalDateTime.now().plusHours(1))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsOwner(owner.id(), State.CURRENT);
+    }
+
+    @Test
+    void testOwnerPast() {
+        UserDto owner = createUser("o@mail24", "O");
+        UserDto booker = createUser("b@mail24", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .start(LocalDateTime.now().minusDays(5))
+                        .end(LocalDateTime.now().minusDays(1))
+                        .itemId(item.id())
+                        .build());
+
+        bookingService.getAllBookingsOwner(owner.id(), State.PAST);
+    }
+
+    @Test
+    void testAddBookingUserNotFound() {
+        NewBookingRequest request = NewBookingRequest.builder()
+                .itemId(999L)
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build();
+
+        assertThrows(NotFoundException.class,
+                () -> bookingService.addBooking(999999L, request));
+    }
+
+    @Test
+    void testAddBookingItemNotFound() {
+        UserDto user = createUser("u@mail100", "U");
+
+        NewBookingRequest request = NewBookingRequest.builder()
+                .itemId(999999L)
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build();
+
+        assertThrows(NotFoundException.class,
+                () -> bookingService.addBooking(user.id(), request));
+    }
+
+    @Test
+    void testAddBookingInvalidDates() {
+        UserDto owner = createUser("o@mail101", "O");
+        UserDto booker = createUser("b@mail101", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        NewBookingRequest request = NewBookingRequest.builder()
+                .itemId(item.id())
+                .start(LocalDateTime.now().plusDays(2))
+                .end(LocalDateTime.now().plusDays(1))
+                .build();
+
+        assertThrows(ValidationException.class,
+                () -> bookingService.addBooking(booker.id(), request));
+    }
+
+    @Test
+    void testAddBookingItemNotAvailable() {
+        UserDto owner = createUser("o@mail102", "O");
+        UserDto booker = createUser("b@mail102", "B");
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(false)
+                        .build());
+
+        NewBookingRequest request = NewBookingRequest.builder()
+                .itemId(item.id())
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build();
+
+        assertThrows(ValidationException.class,
+                () -> bookingService.addBooking(booker.id(), request));
+    }
+
+    @Test
+    void testAddBookingOwnItem() {
+        UserDto owner = createUser("o@mail103", "O");
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        NewBookingRequest request = NewBookingRequest.builder()
+                .itemId(item.id())
+                .start(LocalDateTime.now().plusDays(1))
+                .end(LocalDateTime.now().plusDays(2))
+                .build();
+
+        assertThrows(NotFoundException.class,
+                () -> bookingService.addBooking(owner.id(), request));
+    }
+
+    @Test
+    void testAddBookingAlreadyBooked() {
+        UserDto owner = createUser("o@mail104", "O");
+        UserDto booker = createUser("b@mail104", "B");
+
+        ItemDto item = createItem(owner.id());
+
+        LocalDateTime start = LocalDateTime.now().plusDays(1);
+        LocalDateTime end = LocalDateTime.now().plusDays(3);
+
+        bookingService.addBooking(booker.id(),
+                NewBookingRequest.builder()
+                        .itemId(item.id())
+                        .start(start)
+                        .end(end)
+                        .build());
+
+        assertThrows(ValidationException.class,
+                () -> bookingService.addBooking(booker.id(),
+                        NewBookingRequest.builder()
+                                .itemId(item.id())
+                                .start(start.plusHours(1))
+                                .end(end.minusHours(1))
+                                .build()));
+    }
+
 }
