@@ -380,12 +380,9 @@ public class BookingControllerTest {
 
     @Test
     void testGetAllBookingsOwnerWaitingBranch() throws Exception {
-        BookingDto waiting = bookingDto.toBuilder()
-                .status(Status.WAITING)
-                .build();
 
         when(bookingService.getAllBookingsOwner(any(), eq(State.WAITING)))
-                .thenReturn(List.of(waiting));
+                .thenReturn(List.of(bookingDto));
 
         mvc.perform(get("/bookings/owner")
                         .header("X-Sharer-User-Id", 1)
