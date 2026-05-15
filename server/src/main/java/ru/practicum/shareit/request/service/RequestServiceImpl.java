@@ -1,6 +1,7 @@
 package ru.practicum.shareit.request.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -22,6 +23,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -34,6 +36,7 @@ public class RequestServiceImpl implements RequestService {
     public RequestDto addRequest(RequestDto requestDto, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("В заголовке передан не существующий userId"));
         Request request = RequestMapper.toRequest(requestDto, user);
+        log.info("Добавление запроса на вещь пользователем с id = " + userId);
         return RequestMapper.toRequestDto(requestRepository.save(request));
     }
 
@@ -49,7 +52,7 @@ public class RequestServiceImpl implements RequestService {
 
         Map<Long, List<Item>> itemMap = itemList.stream()
                 .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
-
+        log.info("Вывод всех запросов на вещи от пользователя с id = " + userId);
         return requestsMap.values()
                 .stream()
                 .map(request -> {
@@ -62,6 +65,7 @@ public class RequestServiceImpl implements RequestService {
     public List<RequestDto> getAllRequests(Long userId) {
         userRepository.findById(userId).orElseThrow(() -> new NotFoundException("В заголовке передан не существующий userId"));
         List<Request> requests = requestRepository.findAllOtherUsersRequests(userId);
+        log.info("Вывод списка актуальных запросов на вещи. Размер списка = " + requests.size());
         return requests.stream().map(RequestMapper::toRequestDto).toList();
     }
 
@@ -70,6 +74,7 @@ public class RequestServiceImpl implements RequestService {
         Request request = requestRepository.findById(requestId).orElseThrow(() -> new NotFoundException("Запрос c id " + requestId + " отсутствует"));
         List<Item> itemList = itemRepository.findAllByRequestId(Set.of(requestId));
         List<ItemOwnerDto> itemOwnerDtoList = RequestMapper.toItemOwnerDtoList(itemList);
+        log.info("Получение запроса на вещь по id = " + requestId);
         return RequestMapper.toRequestItemDto(request, itemOwnerDtoList);
     }
 
