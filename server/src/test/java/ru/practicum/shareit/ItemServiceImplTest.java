@@ -271,4 +271,62 @@ public class ItemServiceImplTest {
 
         assertThat(result.text(), equalTo("Good"));
     }
+
+    @Test
+    void testGetItemAsStranger() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+        UserDto stranger = userService.create(new NewUserRequest("s@mail", "S"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        ItemDateCommentDto result =
+                itemService.getById(stranger.id(), item.id());
+
+        assertThat(result.id(), equalTo(item.id()));
+    }
+
+    @Test
+    void testUpdateItemPartialFields() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        UpdateItemRequest update = UpdateItemRequest.builder()
+                .name(null)
+                .description("Updated")
+                .available(null)
+                .build();
+
+        ItemDto result = itemService.update(owner.id(), item.id(), update);
+
+        assertThat(result.description(), equalTo("Updated"));
+    }
+
+    @Test
+    void testAddCommentWithoutPastBooking() {
+        UserDto owner = userService.create(new NewUserRequest("o@mail", "O"));
+        UserDto user = userService.create(new NewUserRequest("u@mail", "U"));
+
+        ItemDto item = itemService.create(owner.id(),
+                NewItemRequest.builder()
+                        .name("Item")
+                        .description("Desc")
+                        .available(true)
+                        .build());
+
+        assertThrows(RuntimeException.class,
+                () -> itemService.addComment(user.id(), item.id(),
+                        CommentDto.builder().text("bad").build()));
+    }
+
 }
